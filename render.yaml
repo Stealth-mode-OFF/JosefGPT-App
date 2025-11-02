@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ai-book-agent
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port 10000"
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: WEAVIATE_URL
+        value: https://ljvclwfnt6gm7simfhwqga.c0.europe-west3.gcp.weaviate.cloud
+    errorHandling:
+      - type: chromadb.errors.InternalError
+        message: "ValueError: Batch size of 47756 is greater than max batch size of 5461"
+    code:
+      - |
+        MAX_BATCH_SIZE = 1000
+
+        for i in range(0, len(items), MAX_BATCH_SIZE):
+            batch = items[i:i+MAX_BATCH_SIZE]
+            try:
+                chromadb.add(batch)
+            except Exception as e:
+                print(f"Error ingesting batch {i}: {e}")
+                continue
